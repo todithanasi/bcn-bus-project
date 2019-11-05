@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Creates a stack containing an IAM role used to Codepipeline
+Parameters:
+  EbsRoleName:
+    Description: "The S3 bucket to use for codepipeline - bucket must already exist"
+    Type: String
+    Default: 'EbsRole'
+Resources:
+  EBSAutoscaleRole:
+    Type: AWS::IAM::Role
+    Properties:
+        AssumeRolePolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Principal:
+                  Service:
+                    - "codepipeline.amazonaws.com"
+                    - "elasticbeanstalk.amazonaws.com"
+                Action:
+                  - "sts:AssumeRole"
+        RoleName: !Ref EbsRoleName
+  EBSAutoscaleRolePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: EbsAutoscalePolicy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Action:
+          - dynamodb:*
+          - s3:*
+          - sns:*
+          - xray:PutTraceSegments
+          - xray:PutTelemetryRecords
+          - logs:*
+          Effect: Allow
+          Resource: "*"
+      Roles: [!Ref EBSAutoscaleRole]
+
+Outputs:
+  RoleId:
+    Description: The logical ID of the IAM role
+    Value: !Ref EBSAutoscaleRole
+  RoleArn:
+    Description: The ARN of the IAM role
+    Value: !GetAtt [EBSAutoscaleRole, Arn]
+  PolicyId:
+    Description: The logical ID of the IAM policy
+    Value: !Ref EBSAutoscaleRolePolicy

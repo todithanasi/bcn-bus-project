@@ -1,0 +1,149 @@
+{% extends "generic.html" %}
+{% load static %}
+{% block contents %}
+    <style>
+    #map { height:100%;
+    width: 1100px;
+    height: 600px;
+    }
+    #maphead {
+        padding: 20px 0px 20px 0px;
+    }
+    </style>
+
+	<form Dd="datefilter" method="get" accept-charset="utf-8"  style="margin: 50px 0px 30px 0px">
+        <div class="row">
+            <div class="col-md-4 mb-4 input-group">
+                <label class="col-md-4" for="fromdate">From Date:</label>
+                <input type="datetime-local" id="fromdate" name="fromdate" type="text"placeholder="From Date" class="form-control col-md-8">
+            </div>
+            <div class="col-md-4 mb-4 input-group">
+                <label class="col-md-4" for="todate">To Date:</label>
+                <input type="datetime-local" id="todate" name="todate" type="text" placeholder="To Date" class="form-control col-md-8">
+            </div>
+            <div class="col-md-2 mb-2 input-group-btn">
+                <input class="btn btn-primary" type="submit">
+            </div>
+         </div>
+	</form>
+    <div class="row">
+        <div class="col-md-6">
+            <canvas id="stopChart" width="200" height="200"></canvas>
+        </div>
+        <div class="col-md-6">
+            <canvas id="lineChart" width="200" height="200"></canvas>
+        </div>
+    </div>
+    <div class="row">
+        <h3 id="maphead"> <small>Map Showing Most Frequest Stop Requests</small></h3>
+        <div id="map"></div>
+    </div>
+    <link rel="stylesheet" src="{% static 'custom.css' %}"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+    <script src="{% static 'heatmap.js-2.0.5/build/heatmap.js' %}"></script>
+    <script src="{% static 'heatmap.js-2.0.5/plugins/leaflet-heatmap/leaflet-heatmap.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js"  type="text/javascript"></script>
+     <script>
+         {%  block jquery  %}
+        labels_stop = {{ stopdata.stop|safe }}
+        stop_count = {{ stopdata.callCounts }}
+        labels_line = {{ linedata.line|safe }}
+        line_count = {{ linedata.callCounts }}
+        if (labels_stop.length != 0 && stop_count.length != 0){
+            setChart(labels_stop, stop_count, "stopChart", "stop")
+        }
+        if (labels_line.length != 0 && line_count.length != 0){
+            setChart(labels_line, line_count, "lineChart", "line")
+        }
+        setMap()
+        function setChart(l, c, id, type) {
+            var ctx = document.getElementById(id).getContext('2d')
+            var myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: l,
+                    datasets: [{
+                        label: '# of Requests per ' + type,
+                        data: c ,
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.2)',
+                            'rgba(54, 162, 235, 0.2)',
+                            'rgba(255, 206, 86, 0.2)',
+                            'rgba(75, 192, 192, 0.2)',
+                            'rgba(153, 102, 255, 0.2)',
+                            'rgba(255, 159, 64, 0.2)'
+                        ],
+                        borderColor: [
+                            'rgba(255,99,132,1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero:true,
+                                 autoSkip: false
+                            }
+                        }],
+                         xAxes: [{
+                            ticks: {
+                                 autoSkip: false
+                            }
+                        }]
+                    }
+                }
+            });
+        }
+          function setMap() {
+          var stopData = {
+          max: 8,
+          data: {{ mapcoord.mapdata|safe }}
+        };
+          var baseLayer = L.tileLayer(
+          'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+            attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>',
+            maxZoom: 15
+          }
+        );
+        var cfg = {
+          // radius should be small ONLY if scaleRadius is true (or small radius is intended)
+          "radius": 0.01,
+          "maxOpacity": .8,
+          // scales the radius based on map zoom
+          "scaleRadius": true,
+          // if set to false the heatmap uses the global maximum for colorization
+          // if activated: uses the data maximum within the current map boundaries
+          //   (there will always be a red spot with useLocalExtremas true)
+          "useLocalExtrema": true,
+          // which field name in your data represents the latitude - default "lat"
+          latField: 'lat',
+          // which field name in your data represents the longitude - default "lng"
+          lngField: 'lng',
+          // which field name in your data represents the data value - default "value"
+          valueField: 'count'
+        };
+        var heatmapLayer = new HeatmapOverlay(cfg);
+
+        var map = new L.Map('map', {
+          center: new L.LatLng(41.385064, 2.213403),
+          zoom: 12,
+          layers: [baseLayer, heatmapLayer]
+        });
+
+        heatmapLayer.setData(stopData);
+
+        // make accessible for debugging
+        layer = heatmapLayer;
+    }
+    {%  endblock jquery  %}
+    </script>
+
+{% endblock %}

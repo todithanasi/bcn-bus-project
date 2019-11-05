@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: EBS 
+Parameters:
+  AppName:
+    Description: Application name
+    Type: String
+    Default: bcn-bus
+  S3Bucket:
+    Description: S3 Bucket, which will hold the artifacts
+    Type: String
+    Default: ''
+  EbsRoleName:
+    Description: Ebs Role name
+    Type: String
+    Default: ''
+  Debug:
+    Description: Environment Variable
+    Type: String
+    Default: True
+  AwsRegion:
+    Description: Environment Variable
+    Type: String
+    Default: eu-west-1
+  S3TmbData:
+    Description: Environment Variable
+    Type: String
+    Default: tmb-datalake
+  S3Url:
+    Description: Environment Variable
+    Type: String
+    Default: https://s3-eu-west-1.amazonaws.com/
+  S3Cache:
+    Description: Environment Variable
+    Type: String
+    Default: tmb-search-result
+  RealTimeTable: 
+    Description: Environment Variable
+    Type: String
+    Default: tmb-realtime
+  RequestsTable:
+    Description: Environment Variable
+    Type: String
+    Default: user-request
+Resources:
+  bcnbus:
+    Type: 'AWS::ElasticBeanstalk::Application'
+    Properties:
+      ApplicationName: !Ref AppName
+      Description: Application created using Cloud Formation Templates
+  envBcnBusenv0:
+    Type: 'AWS::ElasticBeanstalk::Environment'
+    Properties:
+      ApplicationName: !Ref bcnbus
+      EnvironmentName: bcn-bus-env
+      SolutionStackName: 64bit Amazon Linux 2018.03 v2.7.0 running Python 3.6
+      Tier:
+        Name: WebServer
+        Type: Standard
+        Version: '1.0'
+      OptionSettings:
+        - Namespace: 'aws:autoscaling:launchconfiguration'
+          OptionName: IamInstanceProfile
+          Value: aws-elasticbeanstalk-service-role
+        - Namespace: 'aws:autoscaling:launchconfiguration'
+          OptionName: ImageId
+          Value: ami-4ec5f237
+        - Namespace: 'aws:autoscaling:trigger'
+          OptionName: UpperThreshold
+          Value: '6000000'
+        - Namespace: 'aws:autoscaling:updatepolicy:rollingupdate'
+          OptionName: RollingUpdateEnabled
+          Value: 'false'
+        - Namespace: 'aws:elasticbeanstalk:application:environment'
+          OptionName: AWS_REGION
+          Value: !Ref AwsRegion
+        - Namespace: 'aws:elasticbeanstalk:application:environment'
+          OptionName: DEBUG
+          Value: !Ref Debug
+        - Namespace: 'aws:elasticbeanstalk:application:environment'
+          OptionName: S3_TMB_DATA
+          Value: !Ref S3TmbData
+        - Namespace: 'aws:elasticbeanstalk:application:environment'
+          OptionName: S3_URL
+          Value: !Ref S3Url
+        - Namespace: 'aws:elasticbeanstalk:application:environment'
+          OptionName: S3_CACHE
+          Value: !Ref S3Cache
+        - Namespace: 'aws:elasticbeanstalk:application:environment'
+          OptionName: REAL_TIME_TABLE
+          Value: !Ref RealTimeTable
+        - Namespace: 'aws:elasticbeanstalk:application:environment'
+          OptionName: REQUESTS_TABLE
+          Value: !Ref RequestsTable
+        - Namespace: 'aws:elasticbeanstalk:container:python'
+          OptionName: WSGIPath
+          Value: eb-django-express-signup/wsgi.py
+        - Namespace: 'aws:elasticbeanstalk:container:python:staticfiles'
+          OptionName: /static/
+          Value: static/
+        - Namespace: 'aws:elasticbeanstalk:environment'
+          OptionName: ServiceRole
+          Value: aws-elasticbeanstalk-service-role
+        - Namespace: 'aws:elasticbeanstalk:healthreporting:system'
+          OptionName: SystemType
+          Value: enhanced
+        - Namespace: 'aws:elb:healthcheck'
+          OptionName: Interval
+          Value: '10'
+        - Namespace: 'aws:elb:loadbalancer'
+          OptionName: LoadBalancerHTTPPort
+          Value: '80'

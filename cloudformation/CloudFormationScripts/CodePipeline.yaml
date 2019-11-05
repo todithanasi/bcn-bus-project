@@ -1,0 +1,179 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Code pipeline"
+
+Parameters:
+
+  CodePipeLineBucket:
+    Description: "The S3 bucket to use for codepipeline - bucket must already exist"
+    Type: String
+    Default: ''
+  GitBranchName:
+    Description: ""
+    Type: String
+    Default: ''
+  GitToken:
+    Description: ""
+    Type: String
+    Default: ''
+  GitOwner:
+    Description: ""
+    Type: String
+    Default: ''
+  GitRepo:
+    Description: ""
+    Type: String
+    Default: ''
+  KMSKeyArn:
+    Description: ARN of the KMS key to use
+    Type: String
+    Default: ''
+
+Resources:
+  AppPipeline:
+    Type: "AWS::CodePipeline::Pipeline"
+    Properties:
+      Name: !Ref AWS::StackName
+      RoleArn: !GetAtt CodePipeLineRole.Arn
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: App
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              Configuration:
+                Branch: master
+                OAuthToken: xxxxxxxxxxxxxxxxxxxxxx
+                Owner: todithanasi
+                PollForSourceChanges: false
+                Repo: bcn-bus
+              OutputArtifacts:
+                - Name: DeployableArtifact
+              RunOrder: 1
+        - Name: DeployToDev
+          Actions:
+            - Name: BcnBus-env
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: ElasticBeanstalk
+              Configuration:
+                ApplicationName: bcn-bus
+                EnvironmentName: bcn-bus-env
+              InputArtifacts:
+                - Name: DeployableArtifact
+              RunOrder: 1      
+
+
+      ArtifactStore:
+        Type: S3
+        Location: !Ref CodePipeLineBucket
+
+
+  CodePipeLineRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "codepipeline.amazonaws.com"
+                - "elasticbeanstalk.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+      -
+        PolicyName: "code-pipeline-access"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+              - Action:
+                  - 's3:GetObject'
+                  - 's3:GetObjectVersion'
+                  - 's3:GetBucketVersioning'
+                  - 's3:PutObject'
+                Resource: '*'
+                Effect: Allow
+              - Action:
+                  - 'codecommit:CancelUploadArchive'
+                  - 'codecommit:GetBranch'
+                  - 'codecommit:GetCommit'
+                  - 'codecommit:GetUploadArchiveStatus'
+                  - 'codecommit:UploadArchive'
+                Resource: '*'
+                Effect: Allow
+              - Action:
+                  - 'codedeploy:CreateDeployment'
+                  - 'codedeploy:GetApplicationRevision'
+                  - 'codedeploy:GetDeployment'
+                  - 'codedeploy:GetDeploymentConfig'
+                  - 'codedeploy:RegisterApplicationRevision'
+                Resource: '*'
+                Effect: Allow
+              - Action:
+                  - 'elasticbeanstalk:*'
+                  - 'ec2:*'
+                  - 'elasticloadbalancing:*'
+                  - 'autoscaling:*'
+                  - 'cloudwatch:*'
+                  - 's3:*'
+                  - 'sns:*'
+                  - 'cloudformation:*'
+                  - 'rds:*'
+                  - 'sqs:*'
+                  - 'ecs:*'
+                  - 'iam:PassRole'
+                Resource: '*'
+                Effect: Allow
+              - Action:
+                  - 'lambda:InvokeFunction'
+                  - 'lambda:ListFunctions'
+                Resource: '*'
+                Effect: Allow
+              - Action:
+                  - 'opsworks:CreateDeployment'
+                  - 'opsworks:DescribeApps'
+                  - 'opsworks:DescribeCommands'
+                  - 'opsworks:DescribeDeployments'
+                  - 'opsworks:DescribeInstances'
+                  - 'opsworks:DescribeStacks'
+                  - 'opsworks:UpdateApp'
+                  - 'opsworks:UpdateStack'
+                Resource: '*'
+                Effect: Allow
+              - Action:
+                  - 'cloudformation:CreateStack'
+                  - 'cloudformation:DeleteStack'
+                  - 'cloudformation:DescribeStacks'
+                  - 'cloudformation:UpdateStack'
+                  - 'cloudformation:CreateChangeSet'
+                  - 'cloudformation:DeleteChangeSet'
+                  - 'cloudformation:DescribeChangeSet'
+                  - 'cloudformation:ExecuteChangeSet'
+                  - 'cloudformation:SetStackPolicy'
+                  - 'cloudformation:ValidateTemplate'
+                  - 'iam:PassRole'
+                Resource: '*'
+                Effect: Allow
+              - Action:
+                  - 'codebuild:BatchGetBuilds'
+                  - 'codebuild:StartBuild'
+                Resource: '*'
+                Effect: Allow
+
+Outputs:
+
+  StackName:
+    Description: "Stack Name"
+    Value: !Ref AWS::StackName
+
+  CodePipeLineJob:
+    Description: "Name of the code pipeline job created"
+    Value: !Ref AppPipeline

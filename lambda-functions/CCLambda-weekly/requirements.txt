@@ -1,0 +1,4 @@
+websocket-client==0.47.0
+xmljson==0.1.9
+xmltodict==0.11.0
+zeep==2.5.0

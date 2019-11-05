@@ -1,0 +1,103 @@
+{% extends "search.html" %}
+{% block result %}
+	{% if search_type %}
+		<p id="result_count"></p>
+		<table id="search_data" class="table"></table>
+	{% elif stop %}
+		<h3> Stop {{stop.name}}</h3>
+		<div id="line-buses">
+			<h4>Bus lines</h4>
+			{% for line in stop.lines %}
+				<span class="margin10"><a href="search?line={{line}}">{{line}}</a></span>
+			{% endfor %}
+		</div>
+		<hr>
+		<div id="upcoming-buses" class="row">
+			<div class="col-md-6 col-xs-12">
+			<h4>Upcoming buses</h4>
+			<p>Last update: {{stop.last_update_time}} <a href="{{ request.get_full_path }}"> Refresh</a></p>
+			<table class="table">
+				{% for line in stop.coming_buses %}
+					<tr><td><a href="search?line={{line.lineCode}}">{{line.lineCode}} - {{line.destination}}</a> : {{line.time}} min</td></tr>
+				{% endfor %}
+			</table>
+			</div>
+		</div>
+	{% elif line %}
+		<hr>
+		<h3> Line {{line.code}} <br> {{line.name}}</h3>
+		<input type="radio" name="group1" value="direction0" checked> From {{line.direction0.source}} to {{line.direction0.destination}}
+		<input type="radio" name="group1" value="direction1"> From {{line.direction1.source}} to {{line.direction1.destination}}
+		<div id="direction0" class="direction">
+			<table class="table">
+				{% for stop in line.direction0.stops %}
+				 <tr>
+				 	<td><a href="search?stop={{stop.code}}">{{stop.name}}</a></td>
+				 	<td>
+				 		{% for other_line in stop.other_lines %}
+				 			{% if other_line != line.code %}
+				 			<span class="margin10"><a href="search?line={{other_line}}">{{other_line}}</a></span>
+				 			{% endif %}
+				 		{% endfor %}
+				 	</td>
+				 </tr>
+				{% endfor %}
+			</table>
+		</div>
+		<div id="direction1" class="direction">
+			<table class="table">
+				{% for stop in line.direction1.stops %}
+				 <tr>
+				 	<td><a href="search?stop={{stop.code}}">{{stop.name}}</a></td>
+				 	<td>
+				 		{% for other_line in stop.other_lines %}
+				 			{% if other_line != line.code %}
+				 			<span class="margin10"><a href="search?line={{other_line}}">{{other_line}}</a></span>
+				 			{% endif %}
+				 		{% endfor %}
+				 	</td>
+				 </tr>
+				{% endfor %}
+			</table>
+		</div>
+	{% endif %}
+
+{% if line %}
+	<script type="text/javascript">
+		$(document).ready(function() {
+		$('#direction1').hide();
+		$("input[name=group1]").on( "change", function() {
+		    var checked = $(this).val();
+		    $('.direction').hide();
+		    $('#'+checked).show();
+		} );
+	});
+	</script>
+{% elif search_type %}
+	<script type="text/javascript">
+		$.getJSON("{{ result_file_name }}", function (data)  {
+			var result_length = Object.keys(data).length;
+			if (result_length == 0) {
+				$('#result_count').append('There is no result matched your search.');
+			} else {
+				$('#result_count').append('There is ' + result_length + ' results matched your search.');
+			}
+			var search_type = "{{search_type}}";
+			if (search_type == "line") {
+				$.each(data, function (i, item) {
+					$('#search_data').append('<tr>' +
+						'<td><a href="search?line=' + item.code +'">' + item.code +' - '+ item.name + '</a></td>' +
+						'</tr>')
+				});
+			} else {
+				$.each(data, function (i, item) {
+					$('#search_data').append('<tr>' +
+						'<td><a href="search?stop=' + item.code +'">' + item.name + '</a></td>' +
+						'</tr>')
+				});
+			}
+		});
+	</script>
+{% endif %}
+
+{% endblock %}

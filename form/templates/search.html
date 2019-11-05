@@ -1,0 +1,18 @@
+{% extends "generic.html" %}
+{% block contents %}
+<center> 
+	<form id="searchform" method="get" accept-charset="utf-8"  style="margin: 50px 0px 30px 0px">
+		<select name="searchType">
+			<option value="" selected disabled hidden>Search by</option>
+			<option value="stop">Stop</option>
+			<option value="line">Line</option>
+		</select>
+		<input name="searchKeyword" type="text" placeholder="">
+<!-- 		<button class="btn" type="submit" style="padding:0px">
+			<span class="glyphicon glyphicon-search"></span>
+		</button> -->
+	    <input class="btn btn-primary" type="submit"> 
+	</form>
+</center>
+{% block result %}{% endblock %}
+{% endblock %}

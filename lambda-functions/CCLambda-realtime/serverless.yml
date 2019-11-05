@@ -1,0 +1,62 @@
+
+service: tmb-service-realtime
+
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  defaultStage: dev
+  currentStage: ${opt:stage, self:custom.defaultStage}
+  # dev is the default stage unless is overwritten by --stage flag
+  pythonRequirements:
+    dockerizePip: non-linux
+
+provider:
+  name: aws
+  runtime: python3.6
+  timeout: 30
+  region: eu-west-1
+  stage: ${self:custom.currentStage}
+  environment:
+    DYNAMODB_TABLE: tmb-realtime-${self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - dynamodb:BatchWriteItem
+      Resource: "arn:aws:dynamodb:eu-west-1:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+
+
+functions:
+  ingest:
+    handler: handler.ingest
+    events:
+        #Invoke Lambda fucntion every minute
+        - schedule: rate(1 minute)
+
+# you can add CloudFormation resource templates here
+resources:
+  Resources:
+    TMBServicesRealTimeData:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: lineCode
+            AttributeType: S
+          - AttributeName: directionId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: lineCode
+            KeyType: HASH
+          - AttributeName: directionId
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}

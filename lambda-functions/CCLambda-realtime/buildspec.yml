@@ -1,0 +1,20 @@
+version: 0.1
+phases:
+  install:
+    commands:
+      - sudo apt-get update
+      - sudo apt-get install -y software-properties-common
+      - sudo add-apt-repository ppa:jonathonf/python-3.6
+      - sudo apt-get update
+      - sudo apt-get install -y python3.6
+      - sudo apt-get install -y python3.6-dev
+      - wget https://bootstrap.pypa.io/get-pip.py
+      - sudo python3.6 get-pip.py
+      - sudo ln -s /usr/bin/python3.6 /usr/local/bin/python3
+      - pip --version
+      - rm -rf node_modules
+      - npm install
+      - npm install -g serverless
+  build:
+    commands:
+      - serverless deploy --stage $DEPLOYMENT_STAGE | tee deploy.out

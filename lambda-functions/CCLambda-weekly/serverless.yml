@@ -1,0 +1,54 @@
+service: tmb-service-weekly
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  defaultStage: test
+  currentStage: ${opt:stage, self:custom.defaultStage}
+  # 'dev' is the default stage unless is overriden by --stage flag
+  pythonRequirements:
+    dockerizePip: non-linux
+
+provider:
+  name: aws
+  runtime: python3.6
+  timeout: 120
+  region: eu-west-1
+  stage : ${self:custom.currentStage}
+  environment:
+    S3_NAME : tmb-datalake-${self:custom.currentStage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:PutItem
+      Resource: "arn:aws:s3:::${self:provider.environment.S3_NAME}"
+
+functions:
+  ingest:
+    handler: handler.ingest
+    events:
+        #Invoke Lambda fucntion every minute
+        - schedule: cron(0 7 ? * MON *)
+
+resources:
+  Resources:
+    S3DataLake:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.S3_NAME}
+        AccessControl: PublicReadWrite
+    #Bucket policy management
+    S3DataLakePolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: 
+          Ref: S3DataLake
+        PolicyDocument:
+          Statement:
+            - Sid: AddPerm
+              Effect: Allow
+              Principal: "*"
+              Action:
+              - s3:GetObject
+              Resource: arn:aws:s3:::${self:provider.environment.S3_NAME}/*
