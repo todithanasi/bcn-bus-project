@@ -18,12 +18,12 @@ This application is Python Django Web Application connected with S3 and DynamoDb
 
 Data is populated in the Dynamodb and S3 bucket by the help of a lambda function getting the information from TMB APIs, for more details on lambda function used, following are links to the lambda function repositories: 
 
-- [Lambda function for realtime data insertion with bus arrival times in DynamoDB](https://github.com/todithanasi/bcn-bus-project/lambda-functions/CCLambda-realtime/)
+- [Lambda function for realtime data insertion with bus arrival times in DynamoDB](lambda-functions/CCLambda-realtime/)
 
-- [Lambda function for weekly data updation of stops and lines with names and locations in S3 bucket](https://github.com/todithanasi/bcn-bus-project/lambda-functions/CCLambda-weekly)
+- [Lambda function for weekly data updation of stops and lines with names and locations in S3 bucket](lambda-functions/CCLambda-weekly)
 
 
 ## Report
 
 The final report of this project is available inside the report folder of this repository.
-[Report](https://github.com/todithanasi/bcn-bus-project/report/Final_Report.pdf)
+[Report](report/Final_Report.pdf)
